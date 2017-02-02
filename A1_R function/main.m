@@ -1,7 +1,7 @@
 %% MC codes for DCFP model considering degradation-shock dependence
 % Algorithm 1: Calculate the R function
 
-clear all; close; clc;
+clear; close; clc;
 
 %% Parameter definition
 % Soft failures
@@ -28,7 +28,7 @@ gamma_a_2 = 1e-4;
 gamma_a_3 = 1e-3;
 
 % Plotting 
-num_t = 1000; 
+num_t = 10; 
 t = linspace(0,6e4,num_t);
 t = t';
 
@@ -39,8 +39,7 @@ R_s0 = zeros(n,num_t);
 R_s1 = zeros(n,num_t);
 R_s2 = zeros(n,num_t);
 R_s3 = zeros(n,num_t);
-M = 200; 
-m = 150;
+m = 25; % Iterations to calculate the sum
 p_0_1 = zeros(m,1);
 p_0_2 = zeros(m,1);
 p_0_3 = zeros(m,1);
@@ -50,8 +49,8 @@ p_2 = zeros(m,1);
 %% Simulation
 for k = 1:num_t
     t_s = t(k);
-    disp('k=');disp(k);
     for j = 1:n
+        disp('k=');disp(k);disp('j');disp(j)
         beta_s = beta_array(j);
         x = phi + beta_s*t_s;
         
@@ -60,7 +59,7 @@ for k = 1:num_t
         else
             p_1 = 0;
         end
-        
+        % Cumulative intensity
         lambda_integral_1 = lambda_0*t_s+gamma_a_1*phi*t_s+...
             .5*gamma_a_1*beta_s*(t_s^2); % dependent case 1
         lambda_integral_2 = lambda_0*t_s+gamma_a_2*phi*t_s+...
@@ -74,34 +73,31 @@ for k = 1:num_t
         p_3_3 = exp(-P_2*lambda_integral_3); % p(E3/AB) dependent case
         p_3_0 = exp(-P_2*lambda_integral_0); % p(E3/AB) independent case
         
-        [a,Y] = damage_shock(M,Y_mu,Y_sigma,H);
-        
         for i = 1:m
             p_0_1(i) = exp(-P_1*lambda_integral_1)*(P_1*lambda_integral_1)^i./factorial(i); % p(A/B) dependent case 1
             p_0_2(i) = exp(-P_1*lambda_integral_2)*(P_1*lambda_integral_2)^i./factorial(i); % p(A/B) dependent case 2
             p_0_3(i) = exp(-P_1*lambda_integral_3)*(P_1*lambda_integral_3)^i./factorial(i); % p(A/B) dependent case 3
             p_0_0(i) = exp(-P_1*lambda_integral_0)*(P_1*lambda_integral_0)^i./factorial(i); % p(A/B) independent case
-            
             W_sum = 0;
             for q = 1:i
-                W_sum = W_sum + alpha*Y(q);
+                W_sum = W_sum + alpha*damage_shock(Y_mu,Y_sigma,C_l);
+                if W_sum < H
+                   p_2(i) = 1;
+                else
+                   p_2(i) = 0;
+                   break;
+                end
             end
-            if W_sum < H
-                p_2(i) = 1;
-            else
-                p_2(i) = 0;
-            end
-                      
             R_s1(j,k) = R_s1(j,k) + p_1*p_2(i)*p_3_1*p_0_1(i);
             R_s2(j,k) = R_s2(j,k) + p_1*p_2(i)*p_3_2*p_0_2(i);
             R_s3(j,k) = R_s3(j,k) + p_1*p_2(i)*p_3_3*p_0_3(i);
             R_s0(j,k) = R_s0(j,k) + p_1*p_2(i)*p_3_0*p_0_0(i); 
-        end 
+        end
         R_s1(j,k) = R_s1(j,k) + p_1*p_3_1*exp(-P_1*lambda_integral_1);
         R_s2(j,k) = R_s2(j,k) + p_1*p_3_2*exp(-P_1*lambda_integral_2);
         R_s3(j,k) = R_s3(j,k) + p_1*p_3_3*exp(-P_1*lambda_integral_3);
-        R_s0(j,k) = R_s0(j,k) + p_1*p_3_0*exp(-P_1*lambda_integral_0);        
-    end   
+        R_s0(j,k) = R_s0(j,k) + p_1*p_3_0*exp(-P_1*lambda_integral_0); 
+    end
 end
 
 R_1 = mean(R_s1);
@@ -126,3 +122,4 @@ legend('\gamma_0=0',...
     'Location','SouthWest')
 xlabel('t/s')
 ylabel('R(t)')
+save('Rfunction')
