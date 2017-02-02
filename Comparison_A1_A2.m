@@ -5,7 +5,7 @@ addpath('C:\Users\Zhiguo ZENG\Documents\MATLAB\MengfeiFan_RESS\MC-DCFP-compariso
 % Results obtained by A1: R function
 load('Rfunction.mat','R_0','R_1','R_2','R_3','t');
 
-plot(t,R_0,'r-',t,R_1,'r-',t,R_2,'r-',t,R_3,'r-');
+plot(t,R_0,'rd',t,R_1,'rd',t,R_2,'rd',t,R_3,'rd');
 hold on;
 
 % Results obtained by A2: failure time

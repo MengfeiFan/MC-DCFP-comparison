@@ -22,7 +22,7 @@ lambda_0 = 2.5e-5;
 gamma_set = [0;1e-5;1e-4;1e-3];
 
 % Sampling
-n = 1e4;
+n = 1e5;
 T = zeros(n,4); 
 R = zeros(n,4);
 

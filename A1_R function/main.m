@@ -1,7 +1,7 @@
 %% MC codes for DCFP model considering degradation-shock dependence
 % Algorithm 1: Calculate the R function
 
-clear all; close; clc;
+clear; close; clc;
 
 %% Parameter definition
 % Soft failures
@@ -20,7 +20,6 @@ C_u = 1.6;
 lambda_0 = 2.5e-5;
 P_1 = normcdf(C_l,Y_mu,Y_sigma);
 P_2 = normcdf(C_u,Y_mu,Y_sigma)-normcdf(C_l,Y_mu,Y_sigma);
-P_3 = 1-P_1-P_2;
 
 % Dependence factor
 gamma_0 = 0;
@@ -69,65 +68,36 @@ for k = 1:num_t
             .5*gamma_a_3*beta_s*(t_s^2); % dependent case 3
         lambda_integral_0 = lambda_0*t_s; % independent case
          
-%         p_3_1 = exp(-P_2*lambda_integral_1); % p(E3/AB) dependent case
-%         p_3_2 = exp(-P_2*lambda_integral_2); % p(E3/AB) dependent case
-%         p_3_3 = exp(-P_2*lambda_integral_3); % p(E3/AB) dependent case
-%         p_3_0 = exp(-P_2*lambda_integral_0); % p(E3/AB) independent case
+        p_3_1 = exp(-P_2*lambda_integral_1); % p(E3/AB) dependent case
+        p_3_2 = exp(-P_2*lambda_integral_2); % p(E3/AB) dependent case
+        p_3_3 = exp(-P_2*lambda_integral_3); % p(E3/AB) dependent case
+        p_3_0 = exp(-P_2*lambda_integral_0); % p(E3/AB) independent case
         
-        p_3_1 = 1; % p(E3/AB) dependent case
-        p_3_2 = 1; % p(E3/AB) dependent case
-        p_3_3 = 1; % p(E3/AB) dependent case
-        p_3_0 = 1; % p(E3/AB) independent case
-
         for i = 1:m
-            % The cond prob that $N(t)=i, N_1(t)=j, N_2(t)=0$, given
-            % $\theta = x$.
-            % N(t)=i given $\theta = x$
-            p_0_1_cond = exp(-lambda_integral_1)*(lambda_integral_1)^i./factorial(i); % p(A/B) dependent case 1
-            p_0_2_cond = exp(-lambda_integral_2)*(lambda_integral_2)^i./factorial(i); % p(A/B) dependent case 2
-            p_0_3_cond = exp(-lambda_integral_3)*(lambda_integral_3)^i./factorial(i); % p(A/B) dependent case 3
-            p_0_0_cond = exp(-lambda_integral_0)*(lambda_integral_0)^i./factorial(i); % p(A/B) independent case
-            % Multiply by the cond prob of $N_1(t) = j, N_2(t) = 0 \given
-            % N(t)=i, \theta = x$
-            ii = 0;
-            p_cond = mnpdf([ii,0,i-ii],[P_1,P_2,P_3]);
-            p_0_1 = p_0_1_cond*p_cond;
-            p_0_2 = p_0_2_cond*p_cond;
-            p_0_3 = p_0_3_cond*p_cond;
-            p_0_0 = p_0_0_cond*p_cond; 
-            p_2 = 1;
-            R_s1(j,k) = R_s1(j,k) + p_1*p_2*p_3_1*p_0_1;
-            R_s2(j,k) = R_s2(j,k) + p_1*p_2*p_3_2*p_0_2;
-            R_s3(j,k) = R_s3(j,k) + p_1*p_2*p_3_3*p_0_3;
-            R_s0(j,k) = R_s0(j,k) + p_1*p_2*p_3_0*p_0_0;             
-            for ii = 1:i
-                p_cond = mnpdf([ii,0,i-ii],[P_1,P_2,P_3]);
-                p_0_1 = p_0_1_cond*p_cond;
-                p_0_2 = p_0_2_cond*p_cond;
-                p_0_3 = p_0_3_cond*p_cond;
-                p_0_0 = p_0_0_cond*p_cond;          
-                W_sum = 0;
-                for q = 1:ii
-                    W_sum = W_sum + damage_shock(Y_mu,Y_sigma,C_l);
-                    if W_sum < H
-                        p_2 = 1;
-                    else
-                        p_2 = 0;
-                        break;
-                    end
+            p_0_1(i) = exp(-P_1*lambda_integral_1)*(P_1*lambda_integral_1)^i./factorial(i); % p(A/B) dependent case 1
+            p_0_2(i) = exp(-P_1*lambda_integral_2)*(P_1*lambda_integral_2)^i./factorial(i); % p(A/B) dependent case 2
+            p_0_3(i) = exp(-P_1*lambda_integral_3)*(P_1*lambda_integral_3)^i./factorial(i); % p(A/B) dependent case 3
+            p_0_0(i) = exp(-P_1*lambda_integral_0)*(P_1*lambda_integral_0)^i./factorial(i); % p(A/B) independent case
+            W_sum = 0;
+            for q = 1:i
+                W_sum = W_sum + alpha*damage_shock(Y_mu,Y_sigma,C_l);
+                if W_sum < H
+                   p_2(i) = 1;
+                else
+                   p_2(i) = 0;
+                   break;
                 end
-                R_s1(j,k) = R_s1(j,k) + p_1*p_2*p_3_1*p_0_1;
-                R_s2(j,k) = R_s2(j,k) + p_1*p_2*p_3_2*p_0_2;
-                R_s3(j,k) = R_s3(j,k) + p_1*p_2*p_3_3*p_0_3;
-                R_s0(j,k) = R_s0(j,k) + p_1*p_2*p_3_0*p_0_0; 
             end
+            R_s1(j,k) = R_s1(j,k) + p_1*p_2(i)*p_3_1*p_0_1(i);
+            R_s2(j,k) = R_s2(j,k) + p_1*p_2(i)*p_3_2*p_0_2(i);
+            R_s3(j,k) = R_s3(j,k) + p_1*p_2(i)*p_3_3*p_0_3(i);
+            R_s0(j,k) = R_s0(j,k) + p_1*p_2(i)*p_3_0*p_0_0(i); 
         end
-        i = 0;
-        R_s1(j,k) = R_s1(j,k) + p_1*exp(-lambda_integral_1);
-        R_s2(j,k) = R_s2(j,k) + p_1*exp(-lambda_integral_2);
-        R_s3(j,k) = R_s3(j,k) + p_1*exp(-lambda_integral_3);
-        R_s0(j,k) = R_s0(j,k) + p_1*exp(-lambda_integral_0);        
-    end   
+        R_s1(j,k) = R_s1(j,k) + p_1*p_3_1*exp(-P_1*lambda_integral_1);
+        R_s2(j,k) = R_s2(j,k) + p_1*p_3_2*exp(-P_1*lambda_integral_2);
+        R_s3(j,k) = R_s3(j,k) + p_1*p_3_3*exp(-P_1*lambda_integral_3);
+        R_s0(j,k) = R_s0(j,k) + p_1*p_3_0*exp(-P_1*lambda_integral_0); 
+    end
 end
 
 R_1 = mean(R_s1);
