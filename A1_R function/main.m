@@ -122,4 +122,4 @@ legend('\gamma_0=0',...
     'Location','SouthWest')
 xlabel('t/s')
 ylabel('R(t)')
-save('Rfunction')
+save('Rfunction.mat')
