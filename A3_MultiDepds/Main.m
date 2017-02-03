@@ -32,7 +32,7 @@ for k=1:4
         beta_s = normrnd(mu_beta,sigma_beta);
         while 1
             handle_lambda = @(t) (lambda_0 + gamma_a*(phi + (beta_s + gamma_d*sum_W)*t) + gamma_b*sum_W);
-            T_1 = 200/handle_lambda(tau); % let T_1 be 1 times of the current mean arrival time
+            T_1 = 5/handle_lambda(tau); % let T_1 be 1 times of the current mean arrival time
             delta_tau = NHPP(handle_lambda,T_1,tau);
             tau = tau + delta_tau;
         %% Step 3
